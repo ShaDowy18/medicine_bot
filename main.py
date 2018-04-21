@@ -15,6 +15,10 @@ server = Flask(__name__)
 def handle_start(message):
     bot.send_message(message.from_user.id,
                      "Добро пожаловать \n")
+@bot.message_handler(content_types=["text"])
+def handle_start(message):
+    bot.send_message(message.from_user.id,
+                      message.text)
 @server.route('/bot', methods=['POST'])
 def getMessage():
     bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
