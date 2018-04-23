@@ -1,49 +1,31 @@
-import os
-import telebot
-from flask import Flask, request
+import requests
+import datetime
 
-import config
+class BotHandler:
 
-bot = telebot.TeleBot(config.token)
-bot.stop_polling()
+    def __init__(self, token):
+        self.token = token
+        self.api_url = "https://api.telegram.org/bot{}/".format(token)
 
-HOST = "0.0.0.0"
-PORT = os.environ.get('PORT', 8443)
+    def get_updates(self, offset=None, timeout=30):
+        method = 'getUpdates'
+        params = {'timeout': timeout, 'offset': offset}
+        resp = requests.get(self.api_url + method, params)
+        result_json = resp.json()['result']
+        return result_json
 
-server = Flask(__name__)
+    def send_message(self, chat_id, text):
+        params = {'chat_id': chat_id, 'text': text}
+        method = 'sendMessage'
+        resp = requests.post(self.api_url + method, params)
+        return resp
 
+    def get_last_update(self):
+        get_result = self.get_updates()
 
-@bot.message_handler(commands=["start"])
-def handle_start(message):
-    bot.send_message(message.from_user.id,
-                     "Добро пожаловать \n")
+        if len(get_result) > 0:
+            last_update = get_result[-1]
+        else:
+            last_update = get_result[len(get_result)]
 
-
-@bot.message_handler(content_types=["text"])
-def handle_start(message):
-    bot.send_message(message.from_user.id,
-                     message.text)
-
-
-@server.route('/bot', methods=['POST'])
-def getMessage():
-    bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
-    return '/bot', 200
-
-
-@server.route('/')
-def webhook_handler():
-    bot.remove_webhook()
-    bot.set_webhook(url=config.heroku_webhook)
-    status_msg = "i'm live. listening on %s:%s" % (HOST, PORT)
-    return status_msg, 200
-
-
-# Remove webhook, it fails sometimes the set if there is a previous webhook
-bot.remove_webhook()
-
-# Set webhook
-bot.set_webhook(url=config.heroku_webhook)
-
-# bot.polling(none_stop=True)
-server.run(host=HOST, port=PORT)
+        return last_update
