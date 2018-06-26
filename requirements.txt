@@ -1,3 +1,5 @@
+openpyxl
+pandas
 telebot==0.0.3
 jsonschema==2.4.0
 notebook==4.1.0
